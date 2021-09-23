@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Login + Firebase Database</title>
+         <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&display=swap" rel="stylesheet">
+        <!-- CSS multicolor -->
+        <link rel="stylesheet" type="text/css" href="style.css">
+        
+    </head>
+    <body>
+        <div id="content_container">
+            <div id="form_container">
+                <div id="form_header_container">
+                    <h2 id="form_header"> Login + Firebase Database </h2>
+                </div>
+
+                <div id="form_content_container">
+                    <div id="form_content_inner_container">
+                        <input type="text" id="full_name" placeholder="Full name">
+                        <input type="email" id="email" placeholder="Email">
+                        <input type="password" id="password" placeholder="New Password">
+
+                        <input type="text" id="favourite_song" placeholder="The Best Song Ever">
+                        <input type="text" id="milk_before_cereal" placeholder="Milk Before Cereal? ( Yes | No )">
+
+                        <div id="button_container">
+                            <button onclick="login()">Login</button>
+                            <button onclick="register()">Register</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </body>
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    
+    
+    <script>
+    // Rajouter vos informations de projet à la place des mienne et lancer le fichier index
+    // Consulter ensuite sur firebase dans la partie authentication et la partie Real time database
+    var firebaseConfig = {
+            apiKey: "AIzaSyBZeOMM8PMlGrv7M6TzQDoxPGPt0nc8J2U",
+            authDomain: "greedisland-39436.firebaseapp.com",
+            databaseURL: "https://greedisland-39436-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "greedisland-39436",
+            storageBucket: "greedisland-39436.appspot.com",
+            messagingSenderId: "809864057143",
+            appId: "1:809864057143:web:22fd62142e0e3af6304ab2",
+            measurementId: "G-0R35RDS1QJ"
+          };
+          // Initialisation firebase avec notre variable "firebaseconfig" 
+          // pour se connecter au bon projet
+          firebase.initializeApp(firebaseConfig);
+          // Initialisation des variable Firebase pour pouvoir utiliser tout le reste
+          const auth = firebase.auth()
+          const database = firebase.database()
+          
+          // Fonction d'inscription
+          function register () {
+            // Stockage des champs dans des variable
+            email = document.getElementById('email').value
+            password = document.getElementById('password').value
+            full_name = document.getElementById('full_name').value
+            favourite_song = document.getElementById('favourite_song').value
+            milk_before_cereal = document.getElementById('milk_before_cereal').value
+          
+            // Vérification des champs
+            if (validate_email(email) == false || validate_password(password) == false) {
+              alert('Email or Password is Outta Line!!')
+              return
+              // Don't continue running the code
+            }
+            if (validate_field(full_name) == false || validate_field(favourite_song) == false || validate_field(milk_before_cereal) == false) {
+              alert('One or More Extra Fields is Outta Line!!')
+              return
+            }
+           
+            // Création du nouvel utilisateur
+            auth.createUserWithEmailAndPassword(email, password)
+            .then(function() {
+              // Création d'une variable contenant toutes les infos utilisateurs
+              var user = auth.currentUser
+          
+              // Création de la connexion à la BDD
+              var database_ref = database.ref()
+          
+              // Creation de l'objet utilisateur
+              var user_data = {
+                email : email,
+                full_name : full_name,
+                favourite_song : favourite_song,
+                milk_before_cereal : milk_before_cereal,
+                last_login : Date.now()
+              }
+          
+              // Push to Firebase Database
+              database_ref.child('users/' + user.uid).set(user_data)
+          
+              // DOne
+              alert('User Created!!')
+            })
+            .catch(function(error) {
+              // Firebase will use this to alert of its errors
+              var error_code = error.code
+              var error_message = error.message
+          
+              alert(error_message)
+            })
+          }
+          
+          // fonction de connexion
+          function login () {
+
+            email = document.getElementById('email').value
+            password = document.getElementById('password').value
+          
+            // Vérification des champs
+            if (validate_email(email) == false || validate_password(password) == false) {
+              alert('Email or Password is Outta Line!!')
+              return
+              // on sort du if
+            }
+          
+            auth.signInWithEmailAndPassword(email, password)
+            .then(function() {
+
+                var user = auth.currentUser
+          
+
+                var database_ref = database.ref()
+          
+
+                var user_data = {
+                last_login : Date.now()
+              }
+          
+              // On envoie dans la base de donnée l'utilisateur qui vient d'être crée
+              database_ref.child('utilisateurs/' + user.uid).update(user_data)
+          
+              // Terminé
+              alert('Utilisateur connecté !!')
+          
+            })
+            .catch(function(error) {
+              // Affichage des erreurs
+              var error_code = error.code
+              var error_message = error.message
+          
+              alert(error_message)
+            })
+          }
+          
+          
+          
+          
+          // REGEX pour vérifier l'email ( se renseigner sur les rgex si vous ne connaissez pas)
+          function validate_email(email) {
+            expression = /^[^@]+@\w+(\.\w+)+\w$/
+            if (expression.test(email) == true) {
+              // Email bon
+              return true
+            } else {
+              // Email pas bon
+              return false
+            }
+          }
+          
+          function validate_password(password) {
+            if (password < 6) {
+              return false
+            } else {
+              return true
+            }
+          }
+          
+          function validate_field(field) {
+            if (field == null) {
+              return false
+            }
+          
+            if (field.length <= 0) {
+              return false
+            } else {
+              return true
+            }
+          }</script></html>
